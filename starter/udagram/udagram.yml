@@ -1,18 +1,178 @@
-Description: CD12352 - Infrastructure as Code Project - Udagram
+Description: CD12352 - Infrastructure as Code Project - Udagram - Paul Ogier
 
+#TODO: Add ressource tags
 Parameters:
-  # Add your parameters here
+  ProjectName:
+    Type: String
+    Description: Tag name for our resources
+    Default: udacity-ogierpaul
+  AsgDesiredCapacity:
+    Type: Number
+    Description: Desired capacity for the fleet of instances
+    Default: 1
 
 Resources:
-  # Add your resources here
-  # We include a portion of the LaunchTemplate resource so you can use the UserData.
   WebAppLaunchTemplate:
-    Type: AWS::EC2::LaunchTemplate
-    Properties: 
-      LaunchTemplateData:
-        UserData:
-          Fn::Base64: |
+      Type: AWS::EC2::LaunchTemplate
+      DependsOn: StaticPrivateS3Bucket
+      Properties: 
+        LaunchTemplateData:
+          ImageId: ami-008fe2fc65df48dac # Canonical, Ubuntu, 22.04 LTS, amd64 jammy image build on 2023-12-07 64-bit x86
+          UserData:
+            Fn::Base64: |
             #!/bin/bash
             apt-get update -y
             sudo apt-get install nginx -y
             service nginx start
+          SecurityGroupIds:
+            - !Ref WebAppSecurityGroup
+          InstanceType: t2.micro
+          BlockDeviceMappings:
+            - DeviceName: "/dev/sdk" #Check indent
+              Ebs:
+                VolumeSize: '10'
+          IamInstanceProfile:
+            Name: !Ref Ec2InstanceProfile          #
+  WebAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref ProjectName
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-vpc-id"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+      - Fn::ImportValue: 
+          !Sub "${ProjectName}-private-subnets"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebAppLaunchTemplate
+        Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
+      MinSize: '4'
+      DesiredCapacity: !Ref AsgDesiredCapacity
+      MaxSize: '6'
+      TargetGroupARNs:
+      - Ref: TargetGroup     
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http access to our load balancer
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-vpc-id"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+      - Fn::ImportValue: !Sub "${ProjectName}-public-subnet1"
+      - Fn::ImportValue: !Sub "${ProjectName}-public-subnet2"
+      SecurityGroups:
+      - Ref: LoadBalancerSecurityGroup 
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: TargetGroup
+      LoadBalancerArn:
+        Ref: LoadBalancer
+      Port: '80'
+      Protocol: HTTP
+  ListenerRule:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn: !Ref 'TargetGroup'
+        Conditions:
+        - Field: path-pattern
+          Values: [/]
+        ListenerArn: !Ref 'Listener'
+        Priority: 1
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: 
+        Fn::ImportValue:
+          Fn::Sub: "${ProjectName}-vpc-id"
+  StaticPrivateS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-4762"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref ProjectName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: 'Allow'
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              Resource:
+                - !GetAtt StaticPrivateS3Bucket.Arn
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref IAMRole 
+
+Outputs:
+
+  # Output the name of the S3 Bucket
+  StaticPrivateBucketName:
+    Description: "Name of the private S3 bucket for static assets."
+    Value: !Ref StaticPrivateS3Bucket
+
+
+  # Output the Public IP of the Application Server
+  AppServerPublicIP:
+    Description: "Public IP of the application server."
+    Value: !GetAtt AppServer.PublicIp
