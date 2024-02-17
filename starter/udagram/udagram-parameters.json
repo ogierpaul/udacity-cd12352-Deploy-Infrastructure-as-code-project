@@ -9,6 +9,6 @@
 	},
 	{
 		"ParameterKey": "PrivateS3BucketName",
-		"ParameterValue": "${STACKNAMESPACE}-${STACKENV}-bucket}"
+		"ParameterValue": "${STACKNAMESPACE}-${STACKENV}-bucket"
 	}
 ]
