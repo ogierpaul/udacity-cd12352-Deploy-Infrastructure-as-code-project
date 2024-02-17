@@ -61,7 +61,7 @@ echo "Project name: $PROJECTNAME"
 
 
 # Substituting environment variables in the JSON file
-echo "Creating parameter file with environment variables in temp/ folder"
+echo "Creating parameter file with environment variables in temp/$STACKNAME-parameters.json"
 envsubst < $PARAMETERS > temp/$STACKNAME-parameters.json
 
 echo "Start check if stackname $STACKNAME  exists in region $REGION"
@@ -74,7 +74,8 @@ if ! aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACKN
   --stack-name "$STACKNAME" \
   --template-body "file://$TEMPLATE" \
   --parameters="file://temp/$STACKNAME-parameters.json" \
-  --region=$REGION 
+  --region=$REGION \
+  --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"
   
   echo "Waiting for stack to be created ..."
   aws cloudformation wait stack-create-complete --stack-name $STACKNAME --region=$REGION
@@ -93,7 +94,11 @@ else
     --stack-name $STACKNAME \
     --template-body file://$TEMPLATE \
     --parameters file://temp/$STACKNAME-parameters.json \
-    --region=$REGION 2>&1)
+    --region=$REGION \
+    --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" \
+    2>&1
+    
+    )
   
   status=$?
   set -e
@@ -116,8 +121,8 @@ else
   
   echo "Waiting for stack creation or update "
   aws cloudformation wait stack-update-complete --stack-name $STACKNAME --region=$REGION
-
+  # echo "Removing parameter file in temp/ folder"
+  # rm temp/$STACKNAME-parameters.json
 fi
-echo "Removing parameter file in temp/ folder"
-rm temp/$STACKNAME-parameters.json
+
 echo "Finished creating or updating stack successfully!"

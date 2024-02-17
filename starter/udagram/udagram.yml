@@ -2,7 +2,7 @@ Description: CD12352 - Infrastructure as Code Project - Udagram - Paul Ogier
 
 #TODO: Add ressource tags
 Parameters:
-  ProjectName:
+  PROJECTNAME:
     Type: String
     Description: Tag name for our resources
     Default: udacity-ogierpaul
@@ -10,6 +10,10 @@ Parameters:
     Type: Number
     Description: Desired capacity for the fleet of instances
     Default: 1
+  PrivateS3BucketName:
+    Type: String
+    Description: Private S3 bucket
+    Default: udacity-ogierpaul
 
 Resources:
   WebAppLaunchTemplate:
@@ -20,10 +24,10 @@ Resources:
           ImageId: ami-008fe2fc65df48dac # Canonical, Ubuntu, 22.04 LTS, amd64 jammy image build on 2023-12-07 64-bit x86
           UserData:
             Fn::Base64: |
-            #!/bin/bash
-            apt-get update -y
-            sudo apt-get install nginx -y
-            service nginx start
+              #!/bin/bash
+              apt-get update -y
+              sudo apt-get install nginx -y
+              service nginx start
           SecurityGroupIds:
             - !Ref WebAppSecurityGroup
           InstanceType: t2.micro
@@ -36,10 +40,10 @@ Resources:
   WebAppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Ref ProjectName
+      GroupDescription: !Ref PROJECTNAME
       VpcId:
         Fn::ImportValue:
-          !Sub "${ProjectName}-vpc-id"
+          !Sub "${PROJECTNAME}-vpc-id"
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
@@ -51,7 +55,7 @@ Resources:
     Properties:
       VPCZoneIdentifier:
       - Fn::ImportValue: 
-          !Sub "${ProjectName}-private-subnets"
+          !Sub "${PROJECTNAME}-private-subnets"
       LaunchTemplate:
         LaunchTemplateId: !Ref WebAppLaunchTemplate
         Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
@@ -66,7 +70,7 @@ Resources:
       GroupDescription: Allow http access to our load balancer
       VpcId:
         Fn::ImportValue:
-          !Sub "${ProjectName}-vpc-id"
+          !Sub "${PROJECTNAME}-vpc-id"
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
@@ -77,8 +81,8 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Subnets:
-      - Fn::ImportValue: !Sub "${ProjectName}-public-subnet1"
-      - Fn::ImportValue: !Sub "${ProjectName}-public-subnet2"
+      - Fn::ImportValue: !Sub "${PROJECTNAME}-public-subnet1"
+      - Fn::ImportValue: !Sub "${PROJECTNAME}-public-subnet2"
       SecurityGroups:
       - Ref: LoadBalancerSecurityGroup 
   Listener:
@@ -116,11 +120,11 @@ Resources:
       UnhealthyThresholdCount: 5
       VpcId: 
         Fn::ImportValue:
-          Fn::Sub: "${ProjectName}-vpc-id"
+          Fn::Sub: "${PROJECTNAME}-vpc-id"
   StaticPrivateS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-4762"
+      BucketName: !Sub "${PROJECTNAME}-4762"
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
@@ -136,7 +140,7 @@ Resources:
   IAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref ProjectName
+      RoleName: !Ref PROJECTNAME
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -173,6 +177,6 @@ Outputs:
 
 
   # Output the Public IP of the Application Server
-  AppServerPublicIP:
-    Description: "Public IP of the application server."
-    Value: !GetAtt AppServer.PublicIp
+  LoadBalancerPublicIP:
+    Description: "Public IP of the load balancer."
+    Value: !GetAtt LoadBalancer.PublicIp

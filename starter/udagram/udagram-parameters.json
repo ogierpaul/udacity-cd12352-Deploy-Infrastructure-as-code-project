@@ -1,7 +1,7 @@
 [
 	{
-	  "ParameterKey": "ProjectName",
-	  "ParameterValue": { "Fn::Join": ["", [ "${STACKNAMESPACE}", "-", "${STACKENV}"]] }
+		"ParameterKey": "PROJECTNAME",
+		"ParameterValue": "${PROJECTNAME}"
 	},
 	{
 	  "ParameterKey": "AsgDesiredCapacity",
@@ -9,6 +9,6 @@
 	},
 	{
 		"ParameterKey": "PrivateS3BucketName",
-		"ParameterValue": { "Fn::Join": ["", [ "${STACKNAMESPACE}", "-", "${STACKENV}", "-bucket" ]] }
+		"ParameterValue": "${STACKNAMESPACE}-${STACKENV}-bucket}"
 	}
 ]
