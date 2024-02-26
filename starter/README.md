@@ -44,10 +44,11 @@ The output of the `network.yml` template is:
 * A NAT Gateway in each AZ's public subnet to allow the private subnet egress
 * Associated route tables, elastic IPs
 
-Network overview
+#### Network overview
 ![Network overview](images/network_overview.jpg)
 
-Detailed network, with only one availability zone represented. This diagram is the output of the `network.yml` template
+#### Detailed network, with only one availability zone represented.
+This diagram is the output of the `network.yml` template
 ![Detailed network](images/network_detailed_one_az.jpg)
 
 
@@ -98,6 +99,10 @@ Detailed network, with only one availability zone represented. This diagram is t
 > All and all, it was a pain to work with both shell and CloudFormation documentation. It is much easier (condition, readability, debugging...) to define the code logic in Python. It was still fun to learn more shell scripting, and I can understand that shell is faster and more lightweight to execute.
 
 ### Output
+#### Complete diagram
+![Complete_diagram](images/network_complete.png)
+
+#### Web app
 ![DNS URL output](images/dns-output.png)
 ![webserver front page](images/webserver-front.png)
 
