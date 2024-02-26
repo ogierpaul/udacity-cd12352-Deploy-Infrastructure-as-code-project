@@ -43,7 +43,7 @@ Resources:
   WebAppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Ref PROJECTNAME
+      GroupDescription: "Enable HTTP Access to the Web app servers from the LoadBalancer Security Group"
       VpcId:
         Fn::ImportValue:
           !Sub "${PROJECTNAME}-vpc-id"
@@ -73,7 +73,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow http access to our load balancer
+      GroupDescription: "Allow http access to our load balancer"
       VpcId:
         Fn::ImportValue:
           !Sub "${PROJECTNAME}-vpc-id"
@@ -151,7 +151,7 @@ Resources:
   IAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref PROJECTNAME
+      RoleName: !Sub ${PROJECTNAME}-s3contentrw
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

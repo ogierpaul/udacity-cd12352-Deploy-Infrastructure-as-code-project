@@ -15,7 +15,7 @@
 
 * This allow for separating cleanly projects (by their namespace) and environments (from development to production)
 
-> Passing environment variables in parameters was really a pain. The AWS CloudFormation is a mess.
+> Passing environment variables in parameters was really a pain. The AWS CloudFormation documentation is not clear at all on this point.
 
 * The AWS CLI has been configured
 * You can test the configurations using the `test_pre_requisites.sh` script that will perform multiple tests to validate your set-up 
@@ -61,8 +61,8 @@ Detailed network, with only one availability zone represented. This diagram is t
 
 ## Project checklist
 ### Infrastructure Diagram
-* Network: done
-* Final: TODO
+- [x] Network
+- [ ] Final
 
 ### Network and Servers Configuration
 |Requirement|Solved|Comment|
@@ -76,33 +76,31 @@ Detailed network, with only one availability zone represented. This diagram is t
 |The application must be exposed to the internet using an Application Load Balancer.|true|See the `LoadBalancer` ressource|
 
 ### Static Content
-* You'll need to create an S3 bucket with CloudFormation to store all static content.
-* This bucket should have public-read access.
-* Your servers IAM Role should provide read and write permissions to this bucket.
-* TODO
+- [x] You'll need to create an S3 bucket with CloudFormation to store all static content.
+- [x] This bucket should have ~~public-read~~ `private` access.
+- [x] Your servers IAM Role should provide read and write permissions to this bucket.
 
 ### Security Groups
-* Udagram communicates on the default HTTP Port: 80, so your servers will need this inbound port open since you will use it with the Load Balancer and the Load Balancer Health Check. As for outbound, the servers will need unrestricted internet access to be able to download and update their software.
-  * Done
-* The load balancer should allow all public traffic (0.0.0.0/0) on port 80 inbound, which is the default HTTP port.
-  * Done
+- [x] Udagram communicates on the default HTTP Port: 80, so your servers will need this inbound port open since you will use it with the Load Balancer and the Load Balancer Health Check. As for outbound, the servers will need unrestricted internet access to be able to download and update their software.
+- [x] The load balancer should allow all public traffic (0.0.0.0/0) on port 80 inbound, which is the default HTTP port.
 
 ### CloudFormation Templates
-* Considering that a network team will be in charge of the networking resources, you'll need to deliver two separate templates: one for networking resources and another one for your application specific resources (servers, load balancer, bucket).
-  * Done, in the `network` and `udagram` directories, respectively.
-  * Using separate directories for different teams is a good practice.
+- [x] Considering that a network team will be in charge of the networking resources, you'll need to deliver two separate templates: one for networking resources and another one for your application specific resources (servers, load balancer, bucket).
+  * In the `network` and `udagram` directories, respectively. Using separate directories for different teams is a good practice.
     * It allows to add `CODEOWNERS` for code governance
     * In CI-CD, It is easier to detect what was changed and what tests need to be run
-* Your application template should use outputs from your networking template to identify the hosting VPC and subnets.
-  * Done
-* One of the output exports of the CloudFormation application stack should be the public URL of the LoadBalancer.
-  * TODO
-* Bonus points if you add http:// in front of the load balancer DNS Name in the output, for convenience.
-  * TODO
-* You should be able to create and destroy the entire infrastructure using scripts (no UI interactions). You can use any language you like (bash or python, for example), but you must be using the CloudFormation CLI or libraries built on top of it (boto3, for example).
-  * Done, see the usage of `run.sh`, `delete.sh`, and `servers_run.sh` or `network_run.sh` in the chapter above
-  * All and all, it was a pain to work with both shell and CloudFormation documentation. It is much easier (condition, readability, debugging...) to define the code logic in Python. It was still fun to learn more shell scripting, and I can understand that shell is faster and more lightweight to execute.
+- [x] Your application template should use outputs from your networking template to identify the hosting VPC and subnets.
+- [x] One of the output exports of the CloudFormation application stack should be the public URL of the LoadBalancer.
+- [x] Bonus points if you add http:// in front of the load balancer DNS Name in the output, for convenience.
+- [x] You should be able to create and destroy the entire infrastructure using scripts (no UI interactions). You can use any language you like (bash or python, for example), but you must be using the CloudFormation CLI or libraries built on top of it (boto3, for example).
+  * see the usage of `run.sh`, `delete.sh`, and `servers_run.sh` or `network_run.sh` in the chapter above
 
-###  BONUS (Optional features)
-* Create a Cloudfront distribution to serve your static content.
-* Set up a bastion host (jump box) to allow you to SSH into your private subnet servers. This bastion host would be on a Public Subnet with port 22 open only to your home IP address, and it would need to have the private key that you use to access the other servers.
+> All and all, it was a pain to work with both shell and CloudFormation documentation. It is much easier (condition, readability, debugging...) to define the code logic in Python. It was still fun to learn more shell scripting, and I can understand that shell is faster and more lightweight to execute.
+
+### Output
+![DNS URL output](images/dns-output.png)
+![webserver front page](images/webserver-front.png)
+
+##  BONUS (Optional features)
+- [ ] Create a Cloudfront distribution to serve your static content.
+- [ ] Set up a bastion host (jump box) to allow you to SSH into your private subnet servers. This bastion host would be on a Public Subnet with port 22 open only to your home IP address, and it would need to have the private key that you use to access the other servers.
