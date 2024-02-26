@@ -1,6 +1,14 @@
 [
 	{
-		"ParameterKey": "Add you parameters here",
-		"ParameterValue": "Add you parameters here"
+		"ParameterKey": "PROJECTNAME",
+		"ParameterValue": "${PROJECTNAME}"
+	},
+	{
+	  "ParameterKey": "AsgDesiredCapacity",
+	  "ParameterValue": "4"
+	},
+	{
+		"ParameterKey": "PrivateS3BucketName",
+		"ParameterValue": "${STACKNAMESPACE}-${STACKENV}-ogierpaul12352"
 	}
 ]
